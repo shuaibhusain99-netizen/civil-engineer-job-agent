@@ -223,7 +223,12 @@ input[type=range]{accent-color:var(--accent);width:90px}
     if (!r.ok) { const e=new Error(j.message||("HTTP "+r.status)); e.status=r.status; throw e; }
     return j;
   }
-  const getFile = async p => { const j=await gh(`/repos/${cfg.repo}/contents/${p}?ref=main`); return {text:b64d(j.content), sha:j.sha}; };
+  const getFile = async p => {
+    const j=await gh(`/repos/${cfg.repo}/contents/${p}?ref=main`);
+    if (j.content) return {text:b64d(j.content), sha:j.sha};
+    const b=await gh(`/repos/${cfg.repo}/git/blobs/${j.sha}`);            // files over 1 MB come without inline content
+    return {text:b64d(b.content), sha:j.sha};
+  };
   const putFile = (p, text, sha, message) => gh(`/repos/${cfg.repo}/contents/${p}`, {method:"PUT", body:JSON.stringify({message, content:b64e(text), sha, branch:"main"})});
 
   // ---------- CSV
